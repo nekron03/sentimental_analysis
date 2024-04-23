@@ -3,28 +3,43 @@ import csv
 
 # Create YoutubeCommentDownloader instance
 downloader = YoutubeCommentDownloader()
-# Get comments from a YouTube video URL
-video_url = 'https://www.youtube.com/watch?v=PjPe9uEeWjc'
-comments_generator = downloader.get_comments_from_url(video_url, sort_by=SORT_BY_POPULAR)
 
-# Convert the generator to a list
-comments_list = list(comments_generator)
-print(comments_list)
-text_values = [comment['text'] for comment in comments_list]
+# List of YouTube video URLs
+video_urls = [
+    'https://www.youtube.com/watch?v=lEFYYpE_hds',
+    'https://www.youtube.com/watch?v=h6potmDg0ek',  # Add more URLs as needed
+]
 
-# Print the result
-print(text_values)
-# Check if comments_list is not empty
-if text_values:
+# Initialize an empty list to store all comments
+all_comments = []
+
+# Iterate over each video URL
+for video_url in video_urls:
+    # Get comments from the current video
+    comments_generator = downloader.get_comments_from_url(video_url, sort_by=SORT_BY_POPULAR)
+    # Extend the list of all comments with comments from this video
+    all_comments.extend(list(comments_generator))
+
+# Sort all comments by the number of likes in descending order
+all_comments.sort(key=lambda x: x.get('votes', 0), reverse=True)
+
+# Check if comments exist
+if all_comments:
     # Specify the CSV file path
-    csv_file_path = 'comment.csv'
+    csv_file_path = 'combined_comments.csv'
 
     # Writing the comments to a CSV file
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
         # Use csv.writer to handle writing multiple columns
-        csv_writer = csv.writer(csv_file)      
-        # Write data
-        csv_writer.writerows([comment['text'].replace(',', ' ').replace(' ', ' ').strip()] for comment in comments_list)
+        csv_writer = csv.writer(csv_file)
+        # Write header
+        csv_writer.writerow(['Video URL', 'Comment Text', 'Likes'])
+        # Write comments data
+        for comment in all_comments:
+            
+            comment_text = comment['text'].replace('\n', ' ')
+            csv_writer.writerow([comment.get('video_url', ''), comment_text, comment.get('votes', 0)])
 
+    print("Comments written to", csv_file_path)
 else:
     print("No comments found.")
